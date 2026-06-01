@@ -24,6 +24,10 @@ The "normal" way to remap that event is [Karabiner-Elements](https://karabiner-e
 > - **Both** volume buttons emit the same code, so both become the trigger (you lose DJI-side volume control).
 > - **Don't hold** the button — a long press triggers the DJI's own Bluetooth pairing.
 
+### Your keyboard shortcut keeps working — pick the DJI's key at install
+
+dji-wisprer **adds** a trigger; it never replaces one. Wispr Flow allows several shortcuts per action, so your keyboard key (e.g. **Fn**) and the **DJI button** *both* trigger Flow. At install time `install.sh` **asks which key the DJI button should send** — `Ctrl+Opt+F18` (recommended, unique), `Fn`, or a custom keycode — so it never collides with your keyboard shortcut. Full walkthrough in **[setup.md](setup.md)**.
+
 ---
 
 ## How it works
@@ -63,12 +67,12 @@ It runs as a **LaunchAgent**, so it auto-starts at login and restarts if it cras
 ## Install
 
 ```sh
-git clone https://github.com/<you>/dji-wisprer.git
+git clone https://github.com/joyjeet-sarkar/dji-wisprer.git
 cd dji-wisprer
 ./install.sh
 ```
 
-`install.sh` builds the binaries, installs `dji-wisprer` to `~/Library/Application Support/dji-wisprer/`, ad-hoc code-signs it (so the permission grant sticks), writes and loads the LaunchAgent, and opens the permission panes. Then finish the two manual steps it prints:
+`install.sh` builds the binaries, installs `dji-wisprer` to `~/Library/Application Support/dji-wisprer/`, ad-hoc code-signs it, **asks which key the DJI button should send** (so it won't clash with your keyboard's Wispr shortcut), writes and loads the LaunchAgent, and opens the permission panes. Then finish the two manual steps it prints. See **[setup.md](setup.md)** for the full walkthrough.
 
 ### 1. Grant Accessibility (and Input Monitoring)
 
