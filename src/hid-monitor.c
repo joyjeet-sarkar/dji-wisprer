@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // hid-monitor — a discovery tool for adapting dji-wispr to YOUR device.
 //
 // It listens to every HID device and prints each input event as:

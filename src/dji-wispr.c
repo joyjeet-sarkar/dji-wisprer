@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // dji-wispr — turn a DJI wireless mic's volume button into a Wispr Flow trigger.
 //
 // How it works:

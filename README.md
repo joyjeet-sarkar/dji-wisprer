@@ -1,5 +1,8 @@
 # dji-wispr
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
+
 **Use a DJI wireless mic's button to trigger [Wispr Flow](https://wisprflow.ai) dictation on macOS — with no kernel driver and no system extension.**
 
 Tap the volume button on your DJI mic → Wispr Flow hands-free dictation toggles on. Tap again → it stops and inserts your text. The button no longer changes your volume; it becomes your push-to-dictate.
