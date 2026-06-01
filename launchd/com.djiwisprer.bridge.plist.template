@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Installed to ~/Library/LaunchAgents/com.djiwispr.bridge.plist by install.sh.
-     __BIN__ is replaced with the absolute path to the installed dji-wispr binary. -->
+<!-- Installed to ~/Library/LaunchAgents/com.djiwisprer.bridge.plist by install.sh.
+     __BIN__ is replaced with the absolute path to the installed dji-wisprer binary. -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.djiwispr.bridge</string>
+    <string>com.djiwisprer.bridge</string>
     <key>ProgramArguments</key>
     <array>
         <string>__BIN__</string>
@@ -17,8 +17,8 @@
     <key>ThrottleInterval</key>
     <integer>5</integer>
     <key>StandardOutPath</key>
-    <string>/tmp/dji-wispr.log</string>
+    <string>/tmp/dji-wisprer.log</string>
     <key>StandardErrorPath</key>
-    <string>/tmp/dji-wispr.err</string>
+    <string>/tmp/dji-wisprer.err</string>
 </dict>
 </plist>

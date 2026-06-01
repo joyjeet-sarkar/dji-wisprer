@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// dji-wispr — turn a DJI wireless mic's volume button into a Wispr Flow trigger.
+// dji-wisprer — turn a DJI wireless mic's volume button into a Wispr Flow trigger.
 //
 // How it works:
 //   1. Open the DJI USB receiver's HID interface and *seize* it
@@ -17,9 +17,9 @@
 // Monitoring + Accessibility permissions.
 //
 // Build:  clang -framework IOKit -framework CoreFoundation \
-//               -framework ApplicationServices src/dji-wispr.c -o dji-wispr
+//               -framework ApplicationServices src/dji-wisprer.c -o dji-wisprer
 //
-// Usage:  dji-wispr [vendorIdHex] [productIdHex]
+// Usage:  dji-wisprer [vendorIdHex] [productIdHex]
 //         Defaults to the DJI Mic Mini receiver (0x2ca3 / 0x4011).
 //         Find your own values with the bundled hid-monitor tool.
 
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
         fflush(stdout);
         return 2;
     }
-    printf("dji-wispr running: device 0x%04x/0x%04x seized -> Ctrl+Opt+F18\n",
+    printf("dji-wisprer running: device 0x%04x/0x%04x seized -> Ctrl+Opt+F18\n",
            gVendorId, gProductId);
     fflush(stdout);
     CFRunLoopRun();

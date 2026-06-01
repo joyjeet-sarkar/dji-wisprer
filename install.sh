@@ -1,11 +1,11 @@
 #!/bin/zsh
-# Install the dji-wispr bridge: build, sign, install binary + LaunchAgent,
+# Install the dji-wisprer bridge: build, sign, install binary + LaunchAgent,
 # then open the permission panes you need to approve.
 set -e
 
-LABEL="com.djiwispr.bridge"
-APP_DIR="$HOME/Library/Application Support/dji-wispr"
-BIN="$APP_DIR/dji-wispr"
+LABEL="com.djiwisprer.bridge"
+APP_DIR="$HOME/Library/Application Support/dji-wisprer"
+BIN="$APP_DIR/dji-wisprer"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 HERE="${0:A:h}"   # directory of this script
 
@@ -14,7 +14,7 @@ make -C "$HERE" all
 
 echo "==> Installing binary to: $BIN"
 mkdir -p "$APP_DIR"
-cp "$HERE/build/dji-wispr" "$BIN"
+cp "$HERE/build/dji-wisprer" "$BIN"
 
 echo "==> Ad-hoc code-signing (stable identity for permissions)"
 codesign --force --sign - --identifier "$LABEL" "$BIN"
@@ -55,6 +55,6 @@ cat <<EOF
     DJI VOLUME BUTTON once. It should capture  ^⌥F18 . Save.
 
  Test: tap the DJI volume button -> dictation toggles on/off.
- Logs: /tmp/dji-wispr.log   (and /tmp/dji-wispr.err)
+ Logs: /tmp/dji-wisprer.log   (and /tmp/dji-wisprer.err)
 ============================================================
 EOF

@@ -1,4 +1,4 @@
-# dji-wispr
+# dji-wisprer
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Platform: macOS](https://img.shields.io/badge/platform-macOS-lightgrey.svg)
@@ -17,7 +17,7 @@ A DJI mic button isn't a keyboard, so macOS — and therefore Wispr — can't se
 
 The "normal" way to remap that event is [Karabiner-Elements](https://karabiner-elements.pqrs.org/). But Karabiner needs a **DriverKit system extension**, and on **MDM-managed / locked-down Macs the IT policy blocks that approval** (`activated waiting for user`, forever). Dead end.
 
-**dji-wispr runs entirely in user space.** It needs only two ordinary permission checkboxes — Input Monitoring and Accessibility — which managed Macs typically leave open even when they block drivers.
+**dji-wisprer runs entirely in user space.** It needs only two ordinary permission checkboxes — Input Monitoring and Accessibility — which managed Macs typically leave open even when they block drivers.
 
 > ⚠️ Discovered limitations:
 > - Works over **USB only**. Over Bluetooth the DJI button sends macOS *nothing*. (USB is also better audio — 48 kHz vs ~16 kHz Bluetooth headset.)
@@ -29,13 +29,18 @@ The "normal" way to remap that event is [Karabiner-Elements](https://karabiner-e
 ## How it works
 
 ```
-┌─────────────┐   USB HID    ┌──────────────────────────────┐   CGEvent    ┌────────────┐
-│ DJI volume  │  Volume Up   │           dji-wispr           │  Ctrl+Opt+   │ Wispr Flow │
-│   button    │ ───────────▶ │  1. SEIZE the HID device      │ ───F18────▶  │ hands-free │
-│  (press)    │  0x0C/0xE9   │     (OS never sees the event, │   keystroke  │  shortcut  │
-└─────────────┘              │      so volume doesn't move)  │              └────────────┘
-                             │  2. synthesize Ctrl+Opt+F18   │
-                             └──────────────────────────────┘
+DJI volume button (USB)
+   │
+   │  press → HID "Volume Up"  (usagePage 0x0C, usage 0xE9)
+   ▼
+dji-wisprer   ·   user-space, no driver / system extension
+   1. SEIZE the DJI HID device
+        → the OS never sees the event, so the volume never moves
+   2. synthesize a Ctrl+Opt+F18 keystroke
+   │
+   │  Ctrl+Opt+F18
+   ▼
+Wispr Flow hands-free shortcut   →   dictation toggles on / off
 ```
 
 1. **Seize** — `IOHIDManagerOpen(..., kIOHIDOptionsTypeSeizeDevice)` takes exclusive control of the DJI HID interface. The system never receives the "Volume Up", so the volume stops changing. This is the trick that replaces Karabiner's event-replacement — no driver required.
@@ -58,25 +63,25 @@ It runs as a **LaunchAgent**, so it auto-starts at login and restarts if it cras
 ## Install
 
 ```sh
-git clone https://github.com/<you>/dji-wispr.git
-cd dji-wispr
+git clone https://github.com/<you>/dji-wisprer.git
+cd dji-wisprer
 ./install.sh
 ```
 
-`install.sh` builds the binaries, installs `dji-wispr` to `~/Library/Application Support/dji-wispr/`, ad-hoc code-signs it (so the permission grant sticks), writes and loads the LaunchAgent, and opens the permission panes. Then finish the two manual steps it prints:
+`install.sh` builds the binaries, installs `dji-wisprer` to `~/Library/Application Support/dji-wisprer/`, ad-hoc code-signs it (so the permission grant sticks), writes and loads the LaunchAgent, and opens the permission panes. Then finish the two manual steps it prints:
 
 ### 1. Grant Accessibility (and Input Monitoring)
 
 In **System Settings → Privacy & Security → Accessibility**, click **`+`**, press **⌘⇧G**, paste:
 
 ```
-~/Library/Application Support/dji-wispr/dji-wispr
+~/Library/Application Support/dji-wisprer/dji-wisprer
 ```
 
 Select it and switch its toggle **ON**. If you're prompted for **Input Monitoring** too, allow that. Then reload the service so it picks up the grant:
 
 ```sh
-launchctl kickstart -k gui/$(id -u)/com.djiwispr.bridge
+launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge
 ```
 
 > These permissions are the same kind Zoom/Loom request to control the screen — **not** a system extension, so an MDM driver block does not apply.
@@ -108,10 +113,10 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
    ```
 2. Pass your `vid`/`pid` to the bridge (it matches the device; it already listens for Volume Up/Down on the consumer page):
    ```sh
-   ./build/dji-wispr 0xVVVV 0xPPPP
+   ./build/dji-wisprer 0xVVVV 0xPPPP
    ```
-   If your button reports a *different* `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wispr.c`](src/dji-wispr.c). To emit a different shortcut than Ctrl+Opt+F18, change the `KEY_*` constants and rebind Wispr accordingly.
-3. To make it permanent, edit the `ProgramArguments` in `~/Library/LaunchAgents/com.djiwispr.bridge.plist` to include your ids, then `launchctl kickstart -k gui/$(id -u)/com.djiwispr.bridge`.
+   If your button reports a *different* `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wisprer.c`](src/dji-wisprer.c). To emit a different shortcut than Ctrl+Opt+F18, change the `KEY_*` constants and rebind Wispr accordingly.
+3. To make it permanent, edit the `ProgramArguments` in `~/Library/LaunchAgents/com.djiwisprer.bridge.plist` to include your ids, then `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`.
 
 ---
 
@@ -119,16 +124,16 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
 
 | Symptom | Cause / Fix |
 | --- | --- |
-| Button still changes the **volume** | Service isn't seizing. Check `cat /tmp/dji-wispr.log`. `seize/open failed 0xe00002e2` → grant **Input Monitoring** to the binary. Make sure you're on **USB**, not Bluetooth. |
+| Button still changes the **volume** | Service isn't seizing. Check `cat /tmp/dji-wisprer.log`. `seize/open failed 0xe00002e2` → grant **Input Monitoring** to the binary. Make sure you're on **USB**, not Bluetooth. |
 | Wispr says **"must include a modifier key"** | The keystroke landed but without modifiers. Make sure you're running the current build (it holds real Ctrl/Opt keys). |
-| Button press does **nothing** in Wispr's recorder | **Accessibility** not granted/active. Re-add the binary and `launchctl kickstart -k gui/$(id -u)/com.djiwispr.bridge`. |
+| Button press does **nothing** in Wispr's recorder | **Accessibility** not granted/active. Re-add the binary and `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`. |
 | Worked, then broke after I **recompiled** | Ad-hoc signatures are content-hashed; rebuilding invalidates the grant. Re-add the binary in Accessibility. |
-| Nothing after **reboot/replug** | `launchctl print gui/$(id -u)/com.djiwispr.bridge | grep state`. Use the USB receiver; the LaunchAgent re-runs at login. |
+| Nothing after **reboot/replug** | `launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep state`. Use the USB receiver; the LaunchAgent re-runs at login. |
 
 Check it's alive:
 ```sh
-launchctl print gui/$(id -u)/com.djiwispr.bridge | grep -E 'state|pid'
-tail -f /tmp/dji-wispr.log
+launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep -E 'state|pid'
+tail -f /tmp/dji-wisprer.log
 ```
 
 ---
@@ -139,7 +144,7 @@ tail -f /tmp/dji-wispr.log
 ./uninstall.sh
 ```
 
-Then remove the leftover `dji-wispr` entry from **Privacy & Security → Accessibility** with the `–` button, and reset your Wispr hands-free shortcut if you wish.
+Then remove the leftover `dji-wisprer` entry from **Privacy & Security → Accessibility** with the `–` button, and reset your Wispr hands-free shortcut if you wish.
 
 ---
 
@@ -152,6 +157,10 @@ Then remove the leftover `dji-wispr` entry from **Privacy & Security → Accessi
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Disclaimer
+
+This is an independent, unofficial project. **Not affiliated with, endorsed by, or sponsored by Wispr Flow or DJI.** "Wispr Flow" and "DJI" are trademarks of their respective owners and are used here only to describe interoperability (nominative fair use).
 
 ---
 

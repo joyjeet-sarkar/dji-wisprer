@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-// hid-monitor — a discovery tool for adapting dji-wispr to YOUR device.
+// hid-monitor — a discovery tool for adapting dji-wisprer to YOUR device.
 //
 // It listens to every HID device and prints each input event as:
 //   EVENT vid=0x.... pid=0x.... usagePage=0x.. usage=0x.. value=N
 //
 // Use it to find (a) your mic receiver's vendor/product id and (b) which
 // usagePage/usage its button emits. Plug in your mic, run this, press the
-// button, and read off the line that appears. Feed those numbers to dji-wispr.
+// button, and read off the line that appears. Feed those numbers to dji-wisprer.
 //
 // Build: clang -framework IOKit -framework CoreFoundation src/hid-monitor.c -o hid-monitor
 // Note:  reading other devices' input requires Input Monitoring permission.

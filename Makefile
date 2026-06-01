@@ -1,4 +1,4 @@
-# dji-wispr — build the bridge and the discovery tool.
+# dji-wisprer — build the bridge and the discovery tool.
 CC      := clang
 CFLAGS  := -Wall -O2
 FRAMEWORKS_BRIDGE  := -framework IOKit -framework CoreFoundation -framework ApplicationServices
@@ -8,12 +8,12 @@ BUILD := build
 
 .PHONY: all clean install uninstall
 
-all: $(BUILD)/dji-wispr $(BUILD)/hid-monitor
+all: $(BUILD)/dji-wisprer $(BUILD)/hid-monitor
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/dji-wispr: src/dji-wispr.c | $(BUILD)
+$(BUILD)/dji-wisprer: src/dji-wisprer.c | $(BUILD)
 	$(CC) $(CFLAGS) $(FRAMEWORKS_BRIDGE) $< -o $@
 
 $(BUILD)/hid-monitor: src/hid-monitor.c | $(BUILD)
