@@ -10,6 +10,12 @@
     <array>
         <string>__BIN__</string>
     </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- fn (default) | chord (Ctrl+Opt+F18) | custom (+ DJI_WISPRER_KEYCODE / _MODS) -->
+        <key>DJI_WISPRER_EMIT</key>
+        <string>fn</string>
+    </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>

@@ -26,7 +26,7 @@ The "normal" way to remap that event is [Karabiner-Elements](https://karabiner-e
 
 ### Your keyboard shortcut keeps working — pick the DJI's key at install
 
-dji-wisprer **adds** a trigger; it never replaces one. Wispr Flow allows several shortcuts per action, so your keyboard key (e.g. **Fn**) and the **DJI button** _both_ trigger Flow. At install time `install.sh` **asks which key the DJI button should send** — `Ctrl+Opt+F18` (recommended, unique), `Fn`, or a custom keycode — so it never collides with your keyboard shortcut. Full walkthrough in **[setup.md](setup.md)**.
+dji-wisprer never replaces your keyboard trigger — Wispr Flow allows several shortcuts per action. **By default the DJI button emits `Fn`**, the key most people already bind to Wispr, so the button reuses your existing shortcut with no extra Wispr setup. At install time `install.sh` **asks which key the DJI button should send** — `Fn` (default), the unique `Ctrl+Opt+F18` chord, or a custom keycode. Full walkthrough in **[setup.md](setup.md)**.
 
 ---
 
@@ -40,16 +40,16 @@ DJI volume button (USB)
 dji-wisprer   ·   user-space, no driver / system extension
    1. SEIZE the DJI HID device
         → the OS never sees the event, so the volume never moves
-   2. synthesize a Ctrl+Opt+F18 keystroke
+   2. synthesize a keystroke  (default: Fn — or Ctrl+Opt+F18)
    │
-   │  Ctrl+Opt+F18
+   │  Fn
    ▼
-Wispr Flow hands-free shortcut   →   dictation toggles on / off
+Wispr Flow shortcut   →   dictation toggles on / off
 ```
 
 1. **Seize** — `IOHIDManagerOpen(..., kIOHIDOptionsTypeSeizeDevice)` takes exclusive control of the DJI HID interface. The system never receives the "Volume Up", so the volume stops changing. This is the trick that replaces Karabiner's event-replacement — no driver required.
-2. **Inject** — on each press we synthesize **Ctrl+Opt+F18**. `F18` is a "phantom" function key (no physical key, no default macOS binding), so the chord can never be typed by accident or collide with another app. We press the _real_ Ctrl and Opt keys around it (not just event flags) because macOS reconciles synthesized flags against the actual hardware modifier state.
-3. **Bind** — Wispr's hands-free shortcut is set to Ctrl+Opt+F18, which is a clean toggle (one tap on, one tap off) — a perfect match for a momentary button.
+2. **Inject** — on each press we synthesize a keystroke Wispr listens for. **By default that's the `Fn` / Globe key** — the key most people already bind to Wispr — so the DJI button reuses your existing shortcut with no extra Wispr setup. macOS doesn't always let software synthesize `Fn`, though; if the button does nothing, switch to **Ctrl+Opt+F18**, a "phantom" chord (no physical F18 key, no default macOS binding) that can never be typed by accident or collide with another app. For the chord we press the _real_ Ctrl and Opt keys around F18 (not just event flags), because macOS reconciles synthesized flags against the actual hardware modifier state.
+3. **Bind** — point a Wispr Flow shortcut at whichever key the button emits. With the `Fn` default you likely already have one; for `Ctrl+Opt+F18` add it as a new Hands-free shortcut. Either way each tap is a clean toggle (one tap on, one tap off) — a perfect match for a momentary button.
 
 It runs as a **LaunchAgent**, so it auto-starts at login and restarts if it crashes.
 
@@ -92,9 +92,9 @@ launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge
 
 ### 2. Point Wispr at the button
 
-**Wispr Flow → Settings → General → Shortcuts → Hands-free** → click the shortcut box so it reads _"listening…"_, then **press the DJI volume button once**. Wispr captures `⌃⌥F18`. Save.
+By default the DJI button emits **Fn** — the same key most people already bind to Wispr — so it may already trigger dictation with no further setup. To bind it explicitly (or if you chose `Ctrl+Opt+F18` at install): **Wispr Flow → Settings → General → Shortcuts → Hands-free** → click the shortcut box so it reads _"listening…"_, then **press the DJI volume button once**. Wispr captures whatever key the button sends. Save.
 
-(You can't type F18 on a Mac keyboard — pressing the button _is_ how you enter it.)
+(For `Ctrl+Opt+F18`, you can't type F18 on a Mac keyboard — pressing the button _is_ how you enter it.)
 
 ### Test
 
@@ -119,7 +119,7 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
    ```sh
    ./build/dji-wisprer 0xVVVV 0xPPPP
    ```
-   If your button reports a _different_ `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wisprer.c`](src/dji-wisprer.c). To emit a different shortcut than Ctrl+Opt+F18, change the `KEY_*` constants and rebind Wispr accordingly.
+   If your button reports a _different_ `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wisprer.c`](src/dji-wisprer.c). To change the emitted key, set `DJI_WISPRER_EMIT` (`fn` / `chord` / `custom`) in the LaunchAgent and rebind Wispr accordingly.
 3. To make it permanent, edit the `ProgramArguments` in `~/Library/LaunchAgents/com.djiwisprer.bridge.plist` to include your ids, then `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`.
 
 ---
@@ -127,9 +127,10 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
 ## Troubleshooting
 
 | Symptom | Cause / Fix |
-| --- | --- | --- |
+| --- | --- |
 | Button still changes the **volume** | Service isn't seizing. Check `cat /tmp/dji-wisprer.log`. `seize/open failed 0xe00002e2` → grant **Input Monitoring** to the binary. Make sure you're on **USB**, not Bluetooth. |
-| Wispr says **"must include a modifier key"** | The keystroke landed but without modifiers. Make sure you're running the current build (it holds real Ctrl/Opt keys). |
+| Log shows `button press -> emitted trigger` but **nothing happens** in Wispr | macOS is dropping the synthesized **Fn** key (the default; this is common). Switch to the chord: set `DJI_WISPRER_EMIT=chord` in `~/Library/LaunchAgents/com.djiwisprer.bridge.plist`, reload, and bind **Ctrl+Opt+F18** in Wispr. |
+| Wispr says **"must include a modifier key"** | The keystroke landed but without modifiers (chord mode). Make sure you're running the current build (it holds real Ctrl/Opt keys). |
 | Button press does **nothing** in Wispr's recorder | **Accessibility** not granted/active. Re-add the binary and `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`. |
 | Worked, then broke after I **recompiled** | Ad-hoc signatures are content-hashed; rebuilding invalidates the grant. Re-add the binary in Accessibility. |
 | Nothing after **reboot/replug** | `launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep state`. Use the USB receiver; the LaunchAgent re-runs at login. |
@@ -156,7 +157,7 @@ Then remove the leftover `dji-wisprer` entry from **Privacy & Security → Acces
 ## Security notes
 
 - 100% local, no network. The whole thing is ~120 lines of C in [`src/`](src) — read it.
-- It **seizes** the matched DJI HID device (exclusive grab) and **synthesizes** one fixed key chord. It does not log keystrokes or read any other device.
+- It **seizes** the matched DJI HID device (exclusive grab) and **synthesizes** one fixed keystroke. It does not log keystrokes or read any other device.
 - It needs **Input Monitoring** (to read/seize the mic's HID) and **Accessibility** (to post the keystroke). Both are standard macOS TCC permissions you grant explicitly.
 
 ## License

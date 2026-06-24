@@ -9,16 +9,17 @@
 //   3. Bind a Wispr Flow shortcut to that keystroke; each tap toggles dictation.
 //
 // IMPORTANT — your keyboard shortcut keeps working:
-//   This only adds a *new* shortcut for the DJI button; it never touches your
-//   existing keyboard trigger. Wispr allows several shortcuts per action, so
-//   the keyboard key (e.g. Fn) and the DJI button can both trigger Flow. Pick a
-//   DJI key here that does NOT collide with your keyboard one (Ctrl+Opt+F18 is a
-//   safe default — see install.sh, which asks you which key to use).
+//   This never touches your existing keyboard trigger; Wispr allows several
+//   shortcuts per action. By default the DJI button emits the Fn / Globe key —
+//   the key most people already bind to Wispr — so the button reuses your
+//   existing shortcut with no extra Wispr setup. Want a separate, collision-
+//   proof binding instead? Pick Ctrl+Opt+F18 (see install.sh, which asks).
 //
 // Choosing the emitted key (env vars):
-//   DJI_WISPRER_EMIT = chord   (default)  -> Ctrl+Opt+F18 (unique "phantom" chord)
-//                      fn                  -> Fn / Globe key (best-effort; macOS
-//                                             rarely lets software synthesize Fn)
+//   DJI_WISPRER_EMIT = fn      (default)  -> Fn / Globe key (reuses your usual
+//                                            Wispr shortcut; note macOS does not
+//                                            always let software synthesize Fn)
+//                      chord               -> Ctrl+Opt+F18 (unique "phantom" chord)
 //                      custom              -> DJI_WISPRER_KEYCODE + DJI_WISPRER_MODS
 //   DJI_WISPRER_KEYCODE = <decimal macOS virtual keycode>   (custom mode)
 //   DJI_WISPRER_MODS    = comma list of: control,option,command,shift            )
@@ -40,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-// ---- Default key: Ctrl+Opt+F18 (F18 is a "phantom" key macOS has no binding for) ----
+// ---- Emitted keys: Fn / Globe (default) and Ctrl+Opt+F18 (the "chord" fallback) ----
 #define KEY_F18 79   // kVK_F18
 #define KEY_FN  0x3F // kVK_Function (the Fn / Globe key)
 
@@ -49,11 +50,11 @@
 #define USAGE_VOLUME_UP     0xE9
 #define USAGE_VOLUME_DOWN   0xEA
 
-enum { EMIT_CUSTOM, EMIT_FN };  // "chord" is just custom with the default key+mods
+enum { EMIT_CUSTOM, EMIT_FN };  // "chord" is just custom with the built-in F18 key+mods
 
 static int gVendorId  = 0x2ca3;  // DJI Technology Co., Ltd.
 static int gProductId = 0x4011;  // "Wireless Mic Rx" receiver
-static int gEmitMode  = EMIT_CUSTOM;
+static int gEmitMode  = EMIT_FN;
 
 // custom/chord config: a key plus held modifier keys
 static CGKeyCode  gKey      = KEY_F18;
@@ -125,15 +126,17 @@ static void valueCb(void* ctx, IOReturn res, void* sender, IOHIDValueRef value) 
 
 static void configureFromEnv(void) {
     const char* mode = getenv("DJI_WISPRER_EMIT");
-    if (mode && strcmp(mode, "fn") == 0) { gEmitMode = EMIT_FN; return; }
+    // Default (unset or "fn"): the Fn / Globe key, which reuses the Wispr
+    // keyboard shortcut most people already have.
+    if (!mode || strcmp(mode, "fn") == 0) { gEmitMode = EMIT_FN; return; }
     gEmitMode = EMIT_CUSTOM;
-    if (mode && strcmp(mode, "custom") == 0) {
+    if (strcmp(mode, "custom") == 0) {
         const char* kc = getenv("DJI_WISPRER_KEYCODE");
         const char* md = getenv("DJI_WISPRER_MODS");
         gKey = kc ? (CGKeyCode)strtol(kc, NULL, 0) : KEY_F18;
         if (md) parseMods(md);
     } else {
-        // "chord" / default: Ctrl+Opt+F18
+        // "chord": Ctrl+Opt+F18
         gKey = KEY_F18;
         addMod(59, kCGEventFlagMaskControl);
         addMod(58, kCGEventFlagMaskAlternate);

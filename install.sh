@@ -23,23 +23,23 @@ codesign --force --sign - --identifier "$LABEL" "$BIN"
 # Ask which key the DJI button should send to Wispr.
 #
 # This does NOT replace your keyboard shortcut — Wispr lets you bind several
-# shortcuts per action, so your keyboard key (e.g. Fn) keeps working AND the
-# DJI button gets its own. Pick a key here that does not collide with your
-# keyboard one. Ctrl+Opt+F18 is a safe, unique default.
+# shortcuts per action. The default (Fn) reuses the Wispr shortcut most people
+# already have, so the DJI button works with no extra Wispr setup. Prefer a
+# separate, collision-proof binding? Pick Ctrl+Opt+F18 instead.
 # ---------------------------------------------------------------------------
 echo
 echo "Which key should the DJI button send to Wispr?"
-echo "  1) Ctrl+Opt+F18   (recommended — unique 'phantom' chord; bind to Wispr Hands-free)"
-echo "  2) Fn / Globe      (experimental — macOS rarely lets software synthesize Fn)"
-echo "  3) Custom          (advanced — enter a macOS keycode + modifiers)"
+echo "  1) Fn / Globe     (default — reuses your existing Wispr keyboard shortcut)"
+echo "  2) Ctrl+Opt+F18   (unique 'phantom' chord; bind it separately to Wispr Hands-free)"
+echo "  3) Custom         (advanced — enter a macOS keycode + modifiers)"
 read "choice?Enter 1, 2, or 3 [1]: "
 choice="${choice:-1}"
 
 case "$choice" in
   2)
-    EMIT="fn"
-    ENV_XML="        <key>DJI_WISPRER_EMIT</key><string>fn</string>"
-    BIND_HINT="Fn / Globe (note: may not register; see README)"
+    EMIT="chord"
+    ENV_XML="        <key>DJI_WISPRER_EMIT</key><string>chord</string>"
+    BIND_HINT="Ctrl+Opt+F18  ( ^⌥F18 )"
     ;;
   3)
     read "kc?macOS virtual keycode (decimal, e.g. 79 = F18): "
@@ -51,9 +51,9 @@ case "$choice" in
     BIND_HINT="your custom keycode ${kc} + [${md}]"
     ;;
   *)
-    EMIT="chord"
-    ENV_XML="        <key>DJI_WISPRER_EMIT</key><string>chord</string>"
-    BIND_HINT="Ctrl+Opt+F18  ( ^⌥F18 )"
+    EMIT="fn"
+    ENV_XML="        <key>DJI_WISPRER_EMIT</key><string>fn</string>"
+    BIND_HINT="Fn / Globe (reuses your keyboard Wispr shortcut; if it doesn't register, re-run and pick Ctrl+Opt+F18)"
     ;;
 esac
 echo "==> DJI button will emit: $BIND_HINT"

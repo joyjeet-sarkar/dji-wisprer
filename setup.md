@@ -2,7 +2,7 @@
 
 Step-by-step install for **dji-wisprer**. The whole thing takes ~3 minutes; the only fiddly part is two macOS permission toggles.
 
-> **Key idea:** this adds a _separate_ shortcut for the DJI button. It never touches your keyboard's Wispr shortcut. Wispr Flow lets you bind several shortcuts to the same action, so **your keyboard key (e.g. Fn) and the DJI button both keep working.** During install you choose which key the DJI button sends — pick one that doesn't collide with your keyboard shortcut.
+> **Key idea:** by default the DJI button emits **Fn** — the same key most people already bind to Wispr — so it reuses your existing shortcut and works with no extra Wispr setup. It never touches your keyboard's Wispr shortcut either way (Wispr Flow lets you bind several shortcuts to the same action). Prefer a separate, collision-proof binding? Choose the unique **Ctrl+Opt+F18** chord at install instead.
 
 ---
 
@@ -29,18 +29,18 @@ cd dji-wisprer
 
 ```
 Which key should the DJI button send to Wispr?
-  1) Ctrl+Opt+F18   (recommended — unique 'phantom' chord; bind to Wispr Hands-free)
-  2) Fn / Globe      (experimental — macOS rarely lets software synthesize Fn)
-  3) Custom          (advanced — enter a macOS keycode + modifiers)
+  1) Fn / Globe     (default — reuses your existing Wispr keyboard shortcut)
+  2) Ctrl+Opt+F18   (unique 'phantom' chord; bind it separately to Wispr Hands-free)
+  3) Custom         (advanced — enter a macOS keycode + modifiers)
 ```
 
-- **Option 1 — `Ctrl+Opt+F18` (recommended).** `F18` is a "phantom" function key that doesn't physically exist on a Mac keyboard and has no default binding, so this chord can never be typed by accident or clash with another app or with your keyboard's Wispr shortcut. You'll bind it to Wispr's **Hands-free** action (a clean tap-on / tap-off toggle — perfect for a momentary button).
-- **Option 2 — `Fn / Globe`.** Tempting (it's what your keyboard already uses), but macOS does **not** reliably let software synthesize the Fn key, so this is best-effort and may simply not register. Also note the DJI button can only _tap_, while Fn is usually _hold-to-talk_ — so even if it fires, the feel differs. Use only if you want to experiment.
+- **Option 1 — `Fn / Globe` (default).** This is the key most people already bind to Wispr, so the DJI button reuses your existing shortcut and works with no extra Wispr setup. Caveat: macOS does **not** always let software synthesize the Fn key, so on some setups it may not register — if the button does nothing, switch to Option 2. (Note too that the DJI button only _taps_, while a keyboard Fn is often _hold-to-talk_, so the feel can differ.)
+- **Option 2 — `Ctrl+Opt+F18`.** `F18` is a "phantom" function key that doesn't physically exist on a Mac keyboard and has no default binding, so this chord can never be typed by accident or clash with another app or with your keyboard's Wispr shortcut. It's the most reliable choice; you bind it to Wispr's **Hands-free** action (a clean tap-on / tap-off toggle — perfect for a momentary button) as a _new_ shortcut.
 - **Option 3 — Custom.** Enter any [macOS virtual keycode](https://eastmanreference.com/complete-list-of-applescript-key-codes) plus modifiers (`control,option,command,shift`). Use this to match a specific Wispr shortcut you already have, or to avoid a collision.
 
-> ### Why both your keyboard and the DJI keep working
+> ### Why your keyboard shortcut keeps working
 >
-> Wispr Flow supports **up to 4 shortcuts per action**. Your keyboard trigger stays exactly as it was. dji-wisprer just makes the DJI button emit a _different_ shortcut, which you add as an _additional_ binding in Wispr. Press the keyboard key → Flow runs. Tap the DJI button → Flow runs. Neither disables the other. The only rule: don't pick a DJI key identical to a key you press for something else, or you'll trigger Flow unintentionally — which is exactly why the unique `Ctrl+Opt+F18` is the default.
+> Wispr Flow supports **up to 4 shortcuts per action**. With the **Fn** default the DJI button simply emits the same key your keyboard already uses, so it rides on your existing binding — nothing to add. If you choose **Ctrl+Opt+F18** instead, you add it as an _additional_ binding in Wispr; your keyboard trigger stays exactly as it was and both keep working. Either way your keyboard shortcut is never touched.
 
 ---
 
@@ -61,9 +61,9 @@ Which key should the DJI button send to Wispr?
 
 ## 4. Add the shortcut in Wispr
 
-**Wispr Flow → Settings → General → Shortcuts** → next to **Hands-free** (or whichever action you want), click the box so it reads _"listening…"_, then **press the DJI volume button once**. Wispr captures the key you chose at install (e.g. `⌃⌥F18`). **Save.**
+If you kept the **Fn** default and already use Fn for Wispr, the button works right away — you can skip this step. Otherwise (or to bind it explicitly): **Wispr Flow → Settings → General → Shortcuts** → next to **Hands-free** (or whichever action you want), click the box so it reads _"listening…"_, then **press the DJI volume button once**. Wispr captures the key you chose at install (e.g. `Fn` or `⌃⌥F18`). **Save.**
 
-You can't type `F18` on a Mac keyboard — pressing the button _is_ how you enter it. Your existing keyboard shortcut is still listed and still works.
+For `Ctrl+Opt+F18` you can't type F18 on a Mac keyboard — pressing the button _is_ how you enter it. Your existing keyboard shortcut is still listed and still works.
 
 ---
 
@@ -79,7 +79,7 @@ The key lives in the LaunchAgent's environment, so you can switch it without rec
 
 ```sh
 # edit ~/Library/LaunchAgents/com.djiwisprer.bridge.plist  → EnvironmentVariables
-# e.g. set DJI_WISPRER_EMIT to chord | fn | custom (+ DJI_WISPRER_KEYCODE / _MODS)
+# e.g. set DJI_WISPRER_EMIT to fn | chord | custom (+ DJI_WISPRER_KEYCODE / _MODS)
 launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge
 ```
 
