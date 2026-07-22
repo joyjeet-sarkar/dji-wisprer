@@ -2,7 +2,7 @@
 
 Step-by-step install for **dji-wisprer**. The whole thing takes ~3 minutes; the only fiddly part is two macOS permission toggles.
 
-> **Key idea:** by default the DJI button emits **Fn** — the same key most people already bind to Wispr — so it reuses your existing shortcut and works with no extra Wispr setup. It never touches your keyboard's Wispr shortcut either way (Wispr Flow lets you bind several shortcuts to the same action). Prefer a separate, collision-proof binding? Choose the unique **Ctrl+Opt+F18** chord at install instead.
+> **Key idea:** by default a **single click** emits **Fn** — the same key most people already bind to Wispr — so it reuses your existing shortcut and works with no extra Wispr setup. A **double click** emits a second keystroke (**Fn+Z** by default) you can bind to any other Wispr action, so one button drives two gestures. It never touches your keyboard's Wispr shortcut either way (Wispr Flow lets you bind several shortcuts to the same action). Prefer a separate, collision-proof binding? Choose the unique **Ctrl+Opt+F18** chord at install instead.
 
 ---
 
@@ -61,9 +61,15 @@ Which key should the DJI button send to Wispr?
 
 ## 4. Add the shortcut in Wispr
 
-If you kept the **Fn** default and already use Fn for Wispr, the button works right away — you can skip this step. Otherwise (or to bind it explicitly): **Wispr Flow → Settings → General → Shortcuts** → next to **Hands-free** (or whichever action you want), click the box so it reads _"listening…"_, then **press the DJI volume button once**. Wispr captures the key you chose at install (e.g. `Fn` or `⌃⌥F18`). **Save.**
+If you kept the **Fn** default and already use Fn for Wispr, a single click works right away — you can skip this step. Otherwise (or to bind it explicitly): **Wispr Flow → Settings → General → Shortcuts** → next to **Hands-free** (or whichever action you want), click the box so it reads _"listening…"_, then **single-click the DJI volume button**. Wispr captures the key you chose at install (e.g. `Fn` or `⌃⌥F18`). **Save.**
 
 For `Ctrl+Opt+F18` you can't type F18 on a Mac keyboard — pressing the button _is_ how you enter it. Your existing keyboard shortcut is still listed and still works.
+
+### Optional: bind the double click
+
+Want a second gesture? In the same **Shortcuts** screen, click the box of _another_ action so it reads _"listening…"_, then **double-click the DJI button** at a relaxed pace (two deliberate taps within the grouping window — **not** a fast drum-roll, which triggers the mic's own Bluetooth pairing). Wispr captures `Fn Z` (the default double-click key). **Save.**
+
+> A single click is only recognized _after_ the grouping window elapses (default 600 ms, so the double click has time to arrive), which means single clicks fire with that much delay. To trade off latency vs. how fast you must double-tap, tune `DJI_WISPRER_DOUBLE_MS` (see below). If Wispr won't accept `Fn+Z`, swap the double to a plain chord with `DJI_WISPRER_DOUBLE_KEYCODE=6 DJI_WISPRER_DOUBLE_MODS=control,option` (→ `Ctrl+Opt+Z`).
 
 ---
 
@@ -75,15 +81,18 @@ Click into any text field → **tap the DJI volume button** → dictation toggle
 
 ## Changing the key later (no rebuild needed)
 
-The key lives in the LaunchAgent's environment, so you can switch it without recompiling (the Accessibility grant stays valid):
+Both keys and the double-click window live in the LaunchAgent's environment, so you can switch them without recompiling (the Accessibility grant stays valid — recompiling would invalidate it):
 
 ```sh
 # edit ~/Library/LaunchAgents/com.djiwisprer.bridge.plist  → EnvironmentVariables
-# e.g. set DJI_WISPRER_EMIT to fn | chord | custom (+ DJI_WISPRER_KEYCODE / _MODS)
+#   single click:  DJI_WISPRER_EMIT = fn | chord | custom  (+ DJI_WISPRER_KEYCODE / _MODS)
+#   double click:  DJI_WISPRER_DOUBLE_KEYCODE + DJI_WISPRER_DOUBLE_MODS  (default Fn+Z)
+#   tap window:    DJI_WISPRER_DOUBLE_MS  (milliseconds, default 600)
+#   (_MODS lists accept: control, option, command, shift, fn)
 launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge
 ```
 
-Then re-record the shortcut in Wispr to match.
+Then re-record the shortcut(s) in Wispr to match. The startup banner in `/tmp/dji-wisprer.log` echoes the active single/double keys, the window, and whether Accessibility is granted.
 
 ---
 

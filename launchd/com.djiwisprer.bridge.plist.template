@@ -12,9 +12,14 @@
     </array>
     <key>EnvironmentVariables</key>
     <dict>
-        <!-- fn (default) | chord (Ctrl+Opt+F18) | custom (+ DJI_WISPRER_KEYCODE / _MODS) -->
+        <!-- SINGLE click: fn (default) | chord (Ctrl+Opt+F18) | custom (+ DJI_WISPRER_KEYCODE / _MODS) -->
         <key>DJI_WISPRER_EMIT</key>
         <string>fn</string>
+        <!-- DOUBLE click (defaults to Fn+Z if unset). _MODS accepts control,option,command,shift,fn.
+             <key>DJI_WISPRER_DOUBLE_KEYCODE</key><string>6</string>
+             <key>DJI_WISPRER_DOUBLE_MODS</key><string>control,option</string>
+             Tap-grouping window in ms (default 600):
+             <key>DJI_WISPRER_DOUBLE_MS</key><string>600</string> -->
     </dict>
     <key>RunAtLoad</key>
     <true/>
