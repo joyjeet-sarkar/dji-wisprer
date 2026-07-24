@@ -102,6 +102,32 @@ Click into any text field, **tap the DJI volume button** → dictation starts; s
 
 ---
 
+## Managing the service
+
+Once installed, `dji-wisprer` runs as a LaunchAgent — it **auto-starts at login** and **restarts if it crashes** (`KeepAlive`). Everyday commands:
+
+**Check it's running**
+
+```sh
+launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep -E 'state|pid'
+```
+
+**Follow the logs** — stdout goes to `/tmp/dji-wisprer.log`, errors to `/tmp/dji-wisprer.err`:
+
+```sh
+tail -f /tmp/dji-wisprer.log
+```
+
+**Restart / reload** — after granting a permission or editing the plist:
+
+```sh
+launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge
+```
+
+**Uninstall** — `make uninstall` (or `./uninstall.sh`); see [Uninstall](#uninstall) below.
+
+---
+
 ## Adapting to your device
 
 The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another mic:
@@ -135,12 +161,7 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
 | Worked, then broke after I **recompiled** | Ad-hoc signatures are content-hashed; rebuilding invalidates the grant. Re-add the binary in Accessibility. |
 | Nothing after **reboot/replug** | `launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep state`. Use the USB receiver; the LaunchAgent re-runs at login. |
 
-Check it's alive:
-
-```sh
-launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep -E 'state|pid'
-tail -f /tmp/dji-wisprer.log
-```
+See **[Managing the service](#managing-the-service)** for status, log, and restart commands.
 
 ---
 
