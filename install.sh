@@ -110,14 +110,10 @@ cat <<EOF
 
  2) SET THE WISPR SHORTCUT
     Wispr Flow > Settings > General > Shortcuts > Hands-free > click the
-    box ("listening"), then SINGLE-CLICK THE DJI VOLUME BUTTON. It captures
+    box ("listening"), then PRESS THE DJI VOLUME BUTTON once. It captures
     $BIND_HINT. Save. Your keyboard shortcut is untouched and still works.
 
-    Bonus: a DOUBLE-click emits Fn+Z by default. Bind it to a second Wispr
-    action the same way (double-click at a relaxed pace when "listening").
-
- Test: single-click the DJI volume button -> dictation toggles on/off.
-       (Single clicks fire after a ~600ms window that waits for a 2nd tap.)
- Logs: /tmp/dji-wisprer.log   (banner shows keys, window, Accessibility state)
+ Test: tap the DJI volume button -> dictation toggles on/off.
+ Logs: /tmp/dji-wisprer.log
 ============================================================
 EOF

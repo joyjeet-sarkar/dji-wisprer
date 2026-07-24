@@ -4,7 +4,7 @@
 
 **Use a DJI wireless mic's button to trigger [Wispr Flow](https://wisprflow.ai) dictation on macOS — with no kernel driver and no system extension.**
 
-**Single-tap** the volume button on your DJI mic → Wispr Flow hands-free dictation toggles on; tap again → it stops and inserts your text. **Double-tap** → a second, separate shortcut fires (`Fn+Z` by default), so one button drives two Wispr actions. The button no longer changes your volume; it becomes your push-to-dictate.
+Tap the volume button on your DJI mic → Wispr Flow hands-free dictation toggles on. Tap again → it stops and inserts your text. The button no longer changes your volume; it becomes your push-to-dictate.
 
 Tested on macOS 26.5 (Apple Silicon) with a **DJI Mic Mini** receiver. It should work with other DJI receivers and, with a one-line change, other USB mics whose buttons emit an HID consumer event (see [Adapting to your device](#adapting-to-your-device)).
 
@@ -12,22 +12,21 @@ Tested on macOS 26.5 (Apple Silicon) with a **DJI Mic Mini** receiver. It should
 
 ## Why this is harder than it sounds
 
-A DJI mic button isn't a keyboard, so macOS — and therefore Wispr — can't see it as a shortcut. But the DJI **USB receiver** quietly exposes an HID interface, and its volume button emits **one** standard event: `Consumer / Volume Up` (`usagePage 0x0C`, `usage 0xE9`) — a single momentary pulse per tap, with no hold duration reported. That's the only signal we get, and we hijack it, then **count taps in software** to tell a single click from a double click. (Because the pulse carries no duration, a press-and-hold "long press" gesture is impossible — see the limitations below.)
+A DJI mic button isn't a keyboard, so macOS — and therefore Wispr — can't see it as a shortcut. But the DJI **USB receiver** quietly exposes an HID interface, and its volume button emits **one** standard event: `Consumer / Volume Up` (`usagePage 0x0C`, `usage 0xE9`). That's the only signal we get, and we hijack it.
 
 The "normal" way to remap that event is [Karabiner-Elements](https://karabiner-elements.pqrs.org/). But Karabiner needs a **DriverKit system extension**, and on **MDM-managed / locked-down Macs the IT policy blocks that approval** (`activated waiting for user`, forever). Dead end.
 
 **dji-wisprer runs entirely in user space.** It needs only two ordinary permission checkboxes — Input Monitoring and Accessibility — which managed Macs typically leave open even when they block drivers.
 
-> ⚠️ Discovered limitations (from watching what the receiver actually sends):
+> ⚠️ Discovered limitations:
 >
 > - Works over **USB only**. Over Bluetooth the DJI button sends macOS _nothing_. (USB is also better audio — 48 kHz vs ~16 kHz Bluetooth headset.)
 > - **Both** volume buttons emit the same code, so both become the trigger (you lose DJI-side volume control).
-> - **No long-press.** However long you hold, the receiver sends one identical ~2 ms pulse and never reports the hold — so a press-and-hold gesture can't be detected.
-> - **Don't double-tap _fast_.** A rapid double-press is intercepted by the DJI's own firmware as Bluetooth pairing and disconnects the receiver. dji-wisprer detects a double click in software from two _normal_ taps, so keep them relaxed — a few hundred ms apart, within the grouping window (see below).
+> - **Don't hold** the button — a long press triggers the DJI's own Bluetooth pairing.
 
 ### Your keyboard shortcut keeps working — pick the DJI's key at install
 
-dji-wisprer never replaces your keyboard trigger — Wispr Flow allows several shortcuts per action. **By default a single click emits `Fn`**, the key most people already bind to Wispr, so the button reuses your existing shortcut with no extra Wispr setup. At install time `install.sh` **asks which key a single click should send** — `Fn` (default), the unique `Ctrl+Opt+F18` chord, or a custom keycode. A **double click** emits a second keystroke (`Fn+Z` by default) you can bind to any other Wispr action. Full walkthrough in **[setup.md](setup.md)**.
+dji-wisprer never replaces your keyboard trigger — Wispr Flow allows several shortcuts per action. **By default the DJI button emits `Fn`**, the key most people already bind to Wispr, so the button reuses your existing shortcut with no extra Wispr setup. At install time `install.sh` **asks which key the DJI button should send** — `Fn` (default), the unique `Ctrl+Opt+F18` chord, or a custom keycode. Full walkthrough in **[setup.md](setup.md)**.
 
 ---
 
@@ -36,25 +35,21 @@ dji-wisprer never replaces your keyboard trigger — Wispr Flow allows several s
 ```
 DJI volume button (USB)
    │
-   │  each tap → one HID "Volume Up" pulse  (usagePage 0x0C, usage 0xE9)
+   │  press → HID "Volume Up"  (usagePage 0x0C, usage 0xE9)
    ▼
 dji-wisprer   ·   user-space, no driver / system extension
    1. SEIZE the DJI HID device
         → the OS never sees the event, so the volume never moves
-   2. COUNT taps within a short window (DJI_WISPRER_DOUBLE_MS, default 600 ms)
-        → 1 tap = single click,  2 taps = double click
-   3. synthesize a keystroke:
-        single click → Fn     (default)
-        double click → Fn+Z   (default)
+   2. synthesize a keystroke  (default: Fn — or Ctrl+Opt+F18)
    │
+   │  Fn
    ▼
-Wispr Flow shortcuts   →   two independent actions
+Wispr Flow shortcut   →   dictation toggles on / off
 ```
 
 1. **Seize** — `IOHIDManagerOpen(..., kIOHIDOptionsTypeSeizeDevice)` takes exclusive control of the DJI HID interface. The system never receives the "Volume Up", so the volume stops changing. This is the trick that replaces Karabiner's event-replacement — no driver required.
-2. **Count taps** — the receiver only ever sends a momentary pulse (no hold duration, so no long-press). The first tap arms a short window (`DJI_WISPRER_DOUBLE_MS`, default 600 ms): one tap inside it is a **single** click, a second tap makes it a **double**. Trade-off — a single click can't fire until the window elapses, so it is delayed by roughly that long; shrink the window to cut the lag, grow it if slow double-taps read as two singles.
-3. **Inject** — a single click synthesizes the single-click key (**default `Fn` / Globe**, the key most people already bind to Wispr); a double click synthesizes the double-click key (**default `Fn+Z`**). macOS doesn't always let software synthesize `Fn`, though; if a click does nothing, switch to a chord like **Ctrl+Opt+F18** (single) or **Ctrl+Opt+Z** (double) — "phantom" combos that can't be typed by accident. For a chord we press the _real_ Ctrl/Opt keys around the main key (not just event flags), because macOS reconciles synthesized flags against the actual hardware modifier state.
-4. **Bind** — point one Wispr Flow shortcut at the single-click key and (optionally) another at the double-click key. With the `Fn` default you likely already have the single one; add the others as new shortcuts. Each single tap is a clean toggle (one on, one off) — a perfect match for a momentary button.
+2. **Inject** — on each press we synthesize a keystroke Wispr listens for. **By default that's the `Fn` / Globe key** — the key most people already bind to Wispr — so the DJI button reuses your existing shortcut with no extra Wispr setup. macOS doesn't always let software synthesize `Fn`, though; if the button does nothing, switch to **Ctrl+Opt+F18**, a "phantom" chord (no physical F18 key, no default macOS binding) that can never be typed by accident or collide with another app. For the chord we press the _real_ Ctrl and Opt keys around F18 (not just event flags), because macOS reconciles synthesized flags against the actual hardware modifier state.
+3. **Bind** — point a Wispr Flow shortcut at whichever key the button emits. With the `Fn` default you likely already have one; for `Ctrl+Opt+F18` add it as a new Hands-free shortcut. Either way each tap is a clean toggle (one tap on, one tap off) — a perfect match for a momentary button.
 
 It runs as a **LaunchAgent**, so it auto-starts at login and restarts if it crashes.
 
@@ -124,7 +119,7 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
    ```sh
    ./build/dji-wisprer 0xVVVV 0xPPPP
    ```
-   If your button reports a _different_ `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wisprer.c`](src/dji-wisprer.c). To change the **single**-click key set `DJI_WISPRER_EMIT` (`fn` / `chord` / `custom`, plus `DJI_WISPRER_KEYCODE` / `DJI_WISPRER_MODS`); to change the **double**-click key set `DJI_WISPRER_DOUBLE_KEYCODE` + `DJI_WISPRER_DOUBLE_MODS` (both accept `control,option,command,shift,fn`; default is `Fn+Z`), and tune the tap-grouping window with `DJI_WISPRER_DOUBLE_MS` (milliseconds, default 600). Set these in the LaunchAgent and rebind Wispr accordingly.
+   If your button reports a _different_ `usagePage`/`usage`, edit the `USAGE_*` constants near the top of [`src/dji-wisprer.c`](src/dji-wisprer.c). To change the emitted key, set `DJI_WISPRER_EMIT` (`fn` / `chord` / `custom`) in the LaunchAgent and rebind Wispr accordingly.
 3. To make it permanent, edit the `ProgramArguments` in `~/Library/LaunchAgents/com.djiwisprer.bridge.plist` to include your ids, then `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`.
 
 ---
@@ -134,11 +129,10 @@ The defaults target the DJI Mic Mini receiver (`0x2ca3 / 0x4011`). For another m
 | Symptom | Cause / Fix |
 | --- | --- |
 | Button still changes the **volume** | Service isn't seizing. Check `cat /tmp/dji-wisprer.log`. `seize/open failed 0xe00002e2` → grant **Input Monitoring** to the binary. Make sure you're on **USB**, not Bluetooth. |
-| Log shows `emitted single` / `emitted double` but **nothing happens** in Wispr | macOS is blocking keystroke injection. The startup banner says which: `accessibility (can inject keystrokes): NO` → grant **Accessibility** (see below). If it says `YES`, macOS is dropping the synthesized **Fn** key (common) — switch that gesture to a chord (e.g. `DJI_WISPRER_EMIT=chord` for single, or `DJI_WISPRER_DOUBLE_MODS=control,option` for double), reload, and bind the chord in Wispr. |
-| Double click fires **two singles** instead | Your two taps were farther apart than the window. The log prints `pulse (gap since last: N ms, window M ms)` — if `N > M`, raise the window: `DJI_WISPRER_DOUBLE_MS` in the LaunchAgent, reload. (Keep taps relaxed, though — a _fast_ double triggers Bluetooth pairing.) |
+| Log shows `button press -> emitted trigger` but **nothing happens** in Wispr | macOS is dropping the synthesized **Fn** key (the default; this is common). Switch to the chord: set `DJI_WISPRER_EMIT=chord` in `~/Library/LaunchAgents/com.djiwisprer.bridge.plist`, reload, and bind **Ctrl+Opt+F18** in Wispr. |
 | Wispr says **"must include a modifier key"** | The keystroke landed but without modifiers (chord mode). Make sure you're running the current build (it holds real Ctrl/Opt keys). |
-| Button press does **nothing** in Wispr's recorder | **Accessibility** not granted/active — confirm with the `accessibility …: NO` banner line. Re-add the binary and `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`. |
-| Worked, then broke after I **recompiled** | Ad-hoc signatures are content-hashed; rebuilding changes the hash and **invalidates the Accessibility grant** (the banner flips to `NO`). Remove the stale entry and re-add the binary in Accessibility, then reload. |
+| Button press does **nothing** in Wispr's recorder | **Accessibility** not granted/active. Re-add the binary and `launchctl kickstart -k gui/$(id -u)/com.djiwisprer.bridge`. |
+| Worked, then broke after I **recompiled** | Ad-hoc signatures are content-hashed; rebuilding invalidates the grant. Re-add the binary in Accessibility. |
 | Nothing after **reboot/replug** | `launchctl print gui/$(id -u)/com.djiwisprer.bridge | grep state`. Use the USB receiver; the LaunchAgent re-runs at login. |
 
 Check it's alive:
@@ -162,8 +156,8 @@ Then remove the leftover `dji-wisprer` entry from **Privacy & Security → Acces
 
 ## Security notes
 
-- 100% local, no network. The whole thing is ~280 lines of C in [`src/`](src) — read it.
-- It **seizes** the matched DJI HID device (exclusive grab) and **synthesizes** one of two fixed keystrokes (single- or double-click). It does not log keystrokes or read any other device.
+- 100% local, no network. The whole thing is ~120 lines of C in [`src/`](src) — read it.
+- It **seizes** the matched DJI HID device (exclusive grab) and **synthesizes** one fixed keystroke. It does not log keystrokes or read any other device.
 - It needs **Input Monitoring** (to read/seize the mic's HID) and **Accessibility** (to post the keystroke). Both are standard macOS TCC permissions you grant explicitly.
 
 ## License
